@@ -21,7 +21,7 @@ n_epochs = 30
 
 valid_loss_min = np.Inf  # track change in validation loss
 
-for epoch in range(1, n_epochs + 1):
+for epoch in range(n_epochs):
 
     # keep track of training and validation loss
     train_loss = 0.0
