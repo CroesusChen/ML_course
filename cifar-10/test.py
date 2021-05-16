@@ -11,6 +11,7 @@ import Net
 test_loss = 0.0
 class_correct = list(0. for i in range(10))
 class_total = list(0. for i in range(10))
+class_p = list(0. for i in range(10))
 # 每批加载16张图片
 batch_size = 16
 # 使用交叉熵损失函数
@@ -18,7 +19,7 @@ criterion = nn.CrossEntropyLoss()
 train_on_gpu = True
 model = Net.Net()
 model.cuda()
-model.load_state_dict(torch.load('model_cifar.pt'))
+model.load_state_dict(torch.load('model_cifar_asgd_0.001.pt'))
 model.eval()
 # iterate over test data
 for data, target in test_loader:
@@ -33,6 +34,8 @@ for data, target in test_loader:
     test_loss += loss.item()*data.size(0)
     # convert output probabilities to predicted class
     _, pred = torch.max(output, 1)
+    # record prediction
+    preds = np.squeeze(pred.numpy()) if not train_on_gpu else np.squeeze(pred.cpu().numpy())
     # compare predictions to true label
     correct_tensor = pred.eq(target.data.view_as(pred))
     correct = np.squeeze(correct_tensor.numpy()) if not train_on_gpu else np.squeeze(correct_tensor.cpu().numpy())
@@ -41,6 +44,8 @@ for data, target in test_loader:
         label = target.data[i]
         class_correct[label] += correct[i].item()
         class_total[label] += 1
+        pre_label = preds[i]
+        class_p[pre_label] += 1
 
 # average test loss
 test_loss = test_loss/len(test_loader.dataset)
@@ -48,15 +53,17 @@ print('Test Loss: {:.6f}\n'.format(test_loss))
 
 for i in range(10):
     if class_total[i] > 0:
-        print('Test Accuracy of %5s: %2d%% (%2d/%2d)' % (
+        print('Test Accuracy of %5s: %2d%% (%2d/%2d)\t precision : %2d%% (%2d/%2d)' % (
             classes[i], 100 * class_correct[i] / class_total[i],
-            np.sum(class_correct[i]), np.sum(class_total[i])))
+            np.sum(class_correct[i]), np.sum(class_total[i]),100 * class_correct[i] / class_p[i],
+            np.sum(class_correct[i]), np.sum(class_p[i])))
     else:
         print('Test Accuracy of %5s: N/A (no training examples)' % (classes[i]))
 
-print('\nTest Accuracy (Overall): %2d%% (%2d/%2d)' % (
+print('\nTest Accuracy (Overall): %2d%% (%2d/%2d)\t precision : %2d%% (%2d/%2d)' % (
     100. * np.sum(class_correct) / np.sum(class_total),
-    np.sum(class_correct), np.sum(class_total)))
+    np.sum(class_correct), np.sum(class_total),100. * np.sum(class_correct) / np.sum(class_p),
+    np.sum(class_correct), np.sum(class_p)))
 
 
 def imshow(img):
