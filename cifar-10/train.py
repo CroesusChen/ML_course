@@ -11,7 +11,8 @@ print(model)
 # 使用交叉熵损失函数
 criterion = nn.CrossEntropyLoss()
 # 使用随机梯度下降，学习率lr=0.01
-optimizer = optim.SGD(model.parameters(), lr=0.01)
+optimizer = optim.SGD(model.parameters(), lr=0.001)
+# optimizer = optim.ASGD(model.parameters(),lr = 0.001)
 # train on gpu
 train_on_gpu = True
 model.cuda()
